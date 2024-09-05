@@ -1,0 +1,35 @@
+name: Package and Deploy to Azure
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up PowerShell
+      uses: azure/powershell@v1
+      with:
+        azPSVersion: 'latest'
+
+    - name: Package Web API
+      run: |
+        cd scripts/deploy
+        ./package-webapi.ps1
+      shell: pwsh
+
+    - name: Deploy to Azure
+      env:
+        AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+        AZURE_DEPLOYMENT_NAME: ${{ secrets.AZURE_DEPLOYMENT_NAME }}
+      run: |
+        cd scripts/deploy
+        ./deploy-azure.ps1 -Subscription $env:AZURE_SUBSCRIPTION_ID -ResourceGroupName $env:AZURE_RESOURCE_GROUP -DeploymentName $env:AZURE_DEPLOYMENT_NAME
+      shell: pwsh
